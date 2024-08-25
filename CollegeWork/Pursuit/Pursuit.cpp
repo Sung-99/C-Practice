@@ -1,7 +1,7 @@
 #include <QMessageBox>
 #include <QSignalMapper>
 
-
+#include    <QDebug>
 #include "Pursuit.h"
 #include "ui_Pursuit.h"
 #include "Player.h"
@@ -9,8 +9,9 @@
 Pursuit::Pursuit(QWidget *parent)
     : QMainWindow(parent),
       ui(new Ui::Pursuit),
-      m_selected(nullptr) ,
-      m_player(Player::player(Player::Red)) {
+      m_player(Player::player(Player::Red)),
+      m_phase( Pursuit::moveJogador),
+      checkGameContinue(true){
      ui->setupUi(this);
 
     QObject::connect(ui->actionNew, SIGNAL(triggered(bool)), this, SLOT(reset()));
@@ -40,90 +41,187 @@ Pursuit::Pursuit(QWidget *parent)
 
     // When the turn ends, switch the player.
     QObject::connect(this, SIGNAL(turnEnded()), this, SLOT(switchPlayer()));
-
+    // Notify when the game is over and reset.
+     //  QObject::connect(this, SIGNAL(gameOver()), this, SLOT(showGameOver()));
+       QObject::connect(this, SIGNAL(gameOver()), this, SLOT(reset()));
     // Reset the game.
     this->reset();
     this->adjustSize();
     this->setFixedSize(this->size());
 
-    this -> updatePlayable();
+    //this -> updatePlayable();
 }
 
 Pursuit::~Pursuit() {
     delete ui;
 }
 
+void Pursuit::setPhase(Pursuit::Phase phase) {
+    if (m_phase != phase) {
+        m_phase = phase;
+        emit phaseChanged(phase);
+    }
+}
+
+
+
+
+
 void Pursuit::play(int id) {
     Cell* cell = m_board[id / 7][id % 7];
 
-     if (cell->isEmpty() && cell -> isPlayable()) {
-
-        cell->setPlayer(m_player);
-
-          emit turnEnded();
-    }
-
-      switch (cell->state()) {
-        case Cell::Used:
-          //if(cell -> player() == m_player){
-                //this -> limpaPlayable();
-
-
-           // cell -> setState(Cell::Selected);
-            foreach (Cell::Direction dir, Cell::directions) {
-                Cell* n = this->celulaJogavel(cell, dir);
-                if (n != nullptr && n->isEmpty())
-                    n->setPlayable(true);
-
-                }
-
-            //}
-
-            break;
-
-
+      // qDebug() << " used ";
+    switch (m_phase) {
+            case Pursuit::moveJogador:
+                moveplay(cell);
+                break;
+            case Pursuit::retiraBlack:
+                retira(cell);
+                break;
             default:
-
-                break;//nothing
-      }
-
-
+                Q_UNREACHABLE();
+        }
 
 }
 
+void Pursuit::moveplay(Cell *cell){
+
+    if (cell->isEmpty() && cell -> isPlayable()) {
+        m_selected -> setPlayer(nullptr);
+        cell->setPlayer(m_player);
+        m_selected = cell;
+        this-> setPhase(Pursuit::retiraBlack);
+
+
+    }
+
+
+     if(cell -> isUsed() && cell -> hasPlayer()) {
+
+                this -> limpaPlayable();//limpo os verdes anteriores
+
+               // qDebug() << " : " << m_selected -> row() << " : "<< m_selected -> col();
+
+         foreach (Cell::Direction dir, Cell::directions) {
+               Cell* n = this->celulaJogavel(cell, dir);
+               if (n != nullptr){
+                 if( n->isBlocked()){
+                     n->setPlayable(true);
+                 }
+                }
+          }
+     }
+     this->updateStatusBar();
+
+}
+
+
+void Pursuit::retira(Cell *cell){
+    if (cell -> isPlayable()) {
+        cell -> setPlayable(false);
+        cell -> setPlayer(m_player);
+        m_selected ->setPlayer(nullptr);
+        m_selected = cell;
+        this -> limpaPlayable();
+        emit turnEnded();
+        //this->updatePlayable();
+
+
+    }
+     this->updateStatusBar();
+
+}
 
 void Pursuit::limpaPlayable() {
     for (int row = 0; row < 7; row++) {
         for (int col = 0; col < 7; col++) {
             Cell* cell = m_board[row][col];
             if(cell -> isPlayable())
-                cell->setState(Cell::Empty);
+                cell->setPlayable(false);
 
 
 
             }
 
         }
+
     }
 
 
 
 
 void Pursuit::switchPlayer() {
+    for (int row = 0; row < 7; row++) {
+        for (int col = 0; col < 7; col++) {
+            Cell* cell = m_board[row][col];
+            if(cell -> state() == Cell::Blocked)
+
+                checkGameContinue = true;
+        }
+    }
+
+
+    if(checkGameContinue)m_player = m_player->other();
     // Switch the player.
-    m_player = m_player->other();
+
 
     // Finally, update the status bar.
     this->updateStatusBar();
 }
 
 
-
+/*Cell* Pursuit::findSelectable(Cell* cell) const{
+   return
+           if(cell )row = cell ->row();
+}*/
 
 void Pursuit::updatePlayable(){
     m_playables.clear();
-    m_playables << m_board[1][2] << m_board[1][4]<< m_board[2][3];
 
+    for (int row = 0; row < 7; row++) {
+        for (int col = 0; col < 7; col++) {
+            Cell* cell = m_board[row][col];
+
+            if(cell ->isUsed()){
+                 //qDebug() << " : " << 1;
+               row = cell -> row();
+               col = cell-> col()+1;
+               if(m_board[row][col] -> isEmpty()){
+               // qDebug() << " : " << cell->isUsed();
+
+                   m_playables << m_board[row][col];
+
+
+                   break;
+              }else{
+                   row = cell -> row() - 1;
+                   col = cell-> col();
+               }
+
+               if(cell -> isEmpty()) {
+
+                    m_playables << m_board[row][col];
+                   row = cell -> row();
+                   col = cell-> col() +1;
+               }else{
+                   m_playables << m_board[row][col];
+               }
+               if(cell -> isEmpty()) {
+
+                    m_playables << m_board[row][col];
+
+               }
+
+
+            }
+
+
+
+        }
+
+    }
+    //m_playables << m_board[1][2] << m_board[1][4]<< m_board[2][3];
+    qDebug() << " : " << m_playables;
     foreach(Cell* cell , m_playables){
         cell -> setPlayable(true);
     }
@@ -141,37 +239,38 @@ Cell* Pursuit::celulaJogavel(Cell* cell, Cell::Direction dir) const {
     int row, col;
     switch (dir) {
         case Cell::North:
-            row = cell->row() - 1;
-            col = cell->col();
+
+                row = cell->row() - 1;
+                col = cell->col();
             break;
-        case Cell::NorthEast:
-            row = cell->row() - 1;
-            col = cell->col() + 1;
-            break;
-        case Cell::East:
-            row = cell->row();
-            col = cell->col() + 1;
-            break;
-        case Cell::SouthEast:
-            row = cell->row() + 1;
-            col = cell->col() + 1;
-            break;
-        case Cell::South:
-            row = cell->row() + 1;
-            col = cell->col();
-            break;
-        case Cell::SouthWest:
-            row = cell->row() + 1;
-            col = cell->col() - 1;
-            break;
-        case Cell::West:
-            row = cell->row();
-            col = cell->col() - 1;
-            break;
-        case Cell::NorthWest:
-            row = cell->row() - 1;
-            col = cell->col() - 1;
-            break;
+    case Cell::NorthEast:
+        row = cell->row();
+        col = cell->col();
+        break;
+    case Cell::East:
+        row = cell->row();
+        col = cell->col() + 1;
+        break;
+    case Cell::SouthEast:
+        row = cell->row() + 1;
+        col = cell->col() + 1;
+        break;
+    case Cell::South:
+        row = cell->row() + 1;
+        col = cell->col();
+        break;
+    case Cell::SouthWest:
+        row = cell->row() + 1;
+        col = cell->col() - 1;
+        break;
+    case Cell::West:
+        row = cell->row();
+        col = cell->col() - 1;
+        break;
+    case Cell::NorthWest:
+        row = cell->row() - 1;
+        col = cell->col() - 1;
+        break;
         default:
             Q_UNREACHABLE();
     }
@@ -199,7 +298,10 @@ void Pursuit::reset() {
     m_board[5][3]->setPlayer(m_player->other());
     m_board[6][3]->setState(Cell::Blocked);
     this -> updatePlayable();
+    m_selected = m_board[1][3];
     this->updateStatusBar();
+    m_phase = Pursuit::moveJogador;
+    checkGameContinue = false;
 
 }
 
@@ -210,6 +312,8 @@ void Pursuit::showAbout() {
 }
 
 void Pursuit::updateStatusBar() {
-    ui->statusbar->showMessage(tr("Vez do %1")
+    QString phase(m_phase == Pursuit::moveJogador ? tr("MOVA") : tr("RETIRE"));
+    ui->statusbar->showMessage(tr("Fase de %1: Vez do %2")
+                               .arg(phase)
         .arg(m_player->name()));
 }
