@@ -22,7 +22,7 @@ public:
     Player::Type type() const { return m_type; }
     const QString& name() const { return m_name; }
     const QPixmap& pixmap() const { return m_pixmap; }
-    const QPixmap& selected() const { return m_selected; }
+
     Player* other() const;
 
 private:

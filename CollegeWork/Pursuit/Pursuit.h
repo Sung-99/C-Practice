@@ -36,16 +36,21 @@ private:
     Cell* m_board[7][7];
     QList<Cell*> m_playables;
     Phase m_phase;
-     Cell* m_selected;
+     Cell* m_selectedRed;
+    Cell* m_selectedBlue;
     bool checkGameContinue;
+    int contTurn;
+
+    Cell* CheckAllPossibleEmpety(Cell* cell) const;
 
     void limpaPlayable(void);
-
+    void MostraOsEmptyPlayable(Cell* cell);
+    void MostraOsBlackPlayable(Cell* cell);
     void moveplay(Cell* cell);
      void retira(Cell* cell);
 
-    Cell* celulaJogavel(Cell* cell, Cell::Direction dir) const;
-    Cell* findSelectable(Cell* cell) const;
+    Cell* celulaJogavelEmpty(Cell* cell, Cell::Direction dir, int soma) const;
+    Cell* celulaJogavelblack(Cell* cell, Cell::Direction dir) const;
 private slots:
     void play(int id);
     void switchPlayer();
