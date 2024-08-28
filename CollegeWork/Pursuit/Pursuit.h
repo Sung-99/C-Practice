@@ -51,6 +51,7 @@ private:
 
     Cell* celulaJogavelEmpty(Cell* cell, Cell::Direction dir, int soma) const;
     Cell* celulaJogavelblack(Cell* cell, Cell::Direction dir) const;
+
 private slots:
     void play(int id);
     void switchPlayer();

@@ -105,6 +105,8 @@ void Pursuit::moveplay(Cell *cell){
 
 }
 
+
+
 void Pursuit::MostraOsBlackPlayable(Cell *cell){
     this->updateStatusBar();
     this -> limpaPlayable();
@@ -128,43 +130,52 @@ void Pursuit::MostraOsBlackPlayable(Cell *cell){
 void Pursuit::MostraOsEmptyPlayable(Cell *cell){
 
     if(cell -> isUsed() && cell -> hasPlayer()) {
-            // qDebug() << " : " << m_selected -> row() << " : "<< m_selected -> col();
+                // qDebug() << " : " << m_selected -> row() << " : "<< m_selected -> col();
 
-            int soma = 1;
-         //   int check = false;
-            foreach (Cell::Direction dir, Cell::directions) {
-              Cell* n;
-                soma = 1;
-                do{
+                int soma;
+                 //int aux = 0;
+                Cell* n ;
+                foreach (Cell::Direction dir, Cell::directions) {
 
-                    n = this->celulaJogavelEmpty(cell, dir, soma);
-                    if(n->row() == 6 || n->col()==6 || n->row() ==0 || n->col()==0)break;
+                   soma = 1;
+                   n = this->celulaJogavelEmpty(cell, dir,soma);
+                   while(n != nullptr)
+                   {
 
-                    if(n -> isEmpty()){ soma++;}
-                    else{ break;}
+                       if(n->isBlocked()){
+                          if(!n->isUsed()) {
+                           soma--;
+                            n = this->celulaJogavelEmpty(cell, dir,soma);
+
+                             n->setPlayable(true);
+                          }
+                           break;
+                        }
+                        if(n -> isEmpty() && !n->isBlocked())soma++;
+                        if(this->celulaJogavelEmpty(cell, dir,soma) != nullptr){
+                         n = this->celulaJogavelEmpty(cell, dir,soma);}else{
+                            soma--;
+                            if((this->celulaJogavelEmpty(n, dir,soma) != nullptr)){
+                                n = this->celulaJogavelEmpty(n, dir,soma);
+
+                                if(n->isBlocked()){
+                                    soma--;
+                                    n = this->celulaJogavelEmpty(n, dir,soma);
+                                    n->setPlayable(true);
+                                }
 
 
-                        }while(n -> isEmpty() && n != nullptr);
-
-                        do{
-
-
-
-                     if(n -> isBlocked()){soma--;}
-                    n = this->celulaJogavelEmpty(cell, dir,soma);
-
-                             if(n->row() ==0 || n->col()==0 || n->row() == 6 || n->col()==6)break;
+                            }
+                                     break;
+                        }
 
 
-                        }while(n -> isBlocked());
+                    }
 
 
-                  if((n->isEmpty() && n != nullptr) && (n->row() != 6 && n->row() !=0 && n->col()!=6 && n->col()!=0))n->setPlayable(true);
                 }
-
-
-            }
     }
+}
 
 Cell* Pursuit::celulaJogavelEmpty(Cell* cell, Cell::Direction dir,int soma) const {
     if (cell == nullptr)
@@ -212,12 +223,8 @@ Cell* Pursuit::celulaJogavelEmpty(Cell* cell, Cell::Direction dir,int soma) cons
     }
 
 
-    if(col > 6)col=6;
-    if(col < 0)col=0;
 
-    if(row > 6)row=6;
-    if(row < 0)row=0;
-    //qDebug() << " row: " <<row << "col: "<<col;
+
     return ((row >= 0 && row < 7 && col >= 0 && col < 7) ?
                 m_board[row][col] : nullptr);
 }
@@ -362,11 +369,7 @@ Cell* Pursuit::celulaJogavelblack(Cell* cell, Cell::Direction dir) const {
         default:
             Q_UNREACHABLE();
     }
-    if(col > 6)col=6;
-    if(col < 0)col=0;
 
-    if(row > 6)row=6;
-    if(row < 0)row=0;
     return ((row >= 0 && row < 7 && col >= 0 && col < 7) ?
                 m_board[row][col] : nullptr);
 }
