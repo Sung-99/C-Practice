@@ -49,7 +49,7 @@ private:
     void moveplay(Cell* cell);
      void retira(Cell* cell);
 
-    Cell* celulaJogavelEmpty(Cell* cell, Cell::Direction dir, int soma) const;
+    Cell* celulaJogavelEmpty(Cell* cell, Cell::Direction dir) const;
     Cell* celulaJogavelblack(Cell* cell, Cell::Direction dir) const;
 
 private slots:

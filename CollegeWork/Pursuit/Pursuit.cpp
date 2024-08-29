@@ -132,52 +132,46 @@ void Pursuit::MostraOsEmptyPlayable(Cell *cell){
     if(cell -> isUsed() && cell -> hasPlayer()) {
                 // qDebug() << " : " << m_selected -> row() << " : "<< m_selected -> col();
 
-                int soma;
-                 //int aux = 0;
+
                 Cell* n ;
+                Cell* last =nullptr;
+                //Cell* SalvaLast;
                 foreach (Cell::Direction dir, Cell::directions) {
 
-                   soma = 1;
-                   n = this->celulaJogavelEmpty(cell, dir,soma);
-                   while(n != nullptr)
-                   {
 
-                       if(n->isBlocked()){
-                          if(!n->isUsed()) {
-                           soma--;
-                            n = this->celulaJogavelEmpty(cell, dir,soma);
+                   n = this->celulaJogavelEmpty(cell, dir);
+                   last =nullptr;
 
-                             n->setPlayable(true);
-                          }
-                           break;
-                        }
-                        if(n -> isEmpty() && !n->isBlocked())soma++;
-                        if(this->celulaJogavelEmpty(cell, dir,soma) != nullptr){
-                         n = this->celulaJogavelEmpty(cell, dir,soma);}else{
-                            soma--;
-                            if((this->celulaJogavelEmpty(n, dir,soma) != nullptr)){
-                                n = this->celulaJogavelEmpty(n, dir,soma);
+                   if(n != nullptr) {
+                       if(n->isEmpty()){
+                            do{
+                                    last = n;
+                                    n = this->celulaJogavelEmpty(last, dir);
+                           }while(n != nullptr && n->isEmpty());
+                       }
 
-                                if(n->isBlocked()){
-                                    soma--;
-                                    n = this->celulaJogavelEmpty(n, dir,soma);
-                                    n->setPlayable(true);
-                                }
+                       if(last != nullptr && last ->isEmpty()){
 
 
-                            }
-                                     break;
-                        }
+
+                            last->setPlayable(true);
+
+                         /*  if(m_player == Player::player(Player::Blue) && last == m_selectedRed)
+                           { m_selectedRed->setPlayable(true); }else
+                           if(m_player == Player::player(Player::Red) && last == m_selectedBlue)
+                           { m_selectedBlue->setPlayable(true);}*/
+
+                       }
 
 
-                    }
-
+                   }
 
                 }
     }
 }
 
-Cell* Pursuit::celulaJogavelEmpty(Cell* cell, Cell::Direction dir,int soma) const {
+
+Cell* Pursuit::celulaJogavelEmpty(Cell* cell, Cell::Direction dir) const {
     if (cell == nullptr)
         return nullptr;
 
@@ -185,37 +179,37 @@ Cell* Pursuit::celulaJogavelEmpty(Cell* cell, Cell::Direction dir,int soma) cons
     switch (dir) {
         case Cell::North:
 
-                row = cell->row()-soma;
+                row = cell->row()-1;
                 col = cell->col();
             break;
     case Cell::NorthEast:
-        row = cell->row()-soma;
-        col = cell->col()+soma;
+        row = cell->row()-1;
+        col = cell->col()+1;
         break;
     case Cell::East:
         row = cell->row();
-        col = cell->col() + soma;
+        col = cell->col() + 1;
         break;
     case Cell::SouthEast:
-        row = cell->row()+soma;
-        col = cell->col()+soma;
+        row = cell->row()+1;
+        col = cell->col()+1;
         break;
     case Cell::South:
-        row = cell->row()+soma;
+        row = cell->row()+1;
         col = cell->col();
         break;
     case Cell::SouthWest:
-        row = cell->row()+soma;
-        col = cell->col()-soma;
+        row = cell->row()+1;
+        col = cell->col()-1;
         break;
     case Cell::West:
         row = cell->row();
-        col = cell->col() - soma;
+        col = cell->col() - 1;
         break;
     case Cell::NorthWest:
 
-        row = cell->row()-soma;
-        col = cell->col()-soma;
+        row = cell->row()-1;
+        col = cell->col()-1;
 
         break;
         default:
